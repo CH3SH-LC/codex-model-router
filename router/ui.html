@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型路由</title>
+<style>
+:root{font-family:system-ui,"Microsoft YaHei",sans-serif;color-scheme:light dark;--bg:#fff;--fg:#202123;--muted:#70757c;--line:#e5e7eb;--soft:#f6f7f8;--accent:#167763;--danger:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg)}main{max-width:1120px;margin:auto;padding:28px}header{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:24px}h1{font-size:25px;margin:0 0 7px;font-weight:650}p{margin:6px 0;color:var(--muted);font-size:13px;line-height:1.6}button,input,select,textarea{font:inherit}button{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);padding:9px 14px;cursor:pointer}button:hover{background:var(--soft)}button:disabled{opacity:.5;cursor:wait}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button.danger{color:var(--danger)}.pill{border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px;white-space:nowrap}.summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}.dot{color:var(--accent)}.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px}aside{border-right:1px solid var(--line);padding-right:20px}.section-title{font-size:12px;color:var(--muted);margin:0 0 10px}.provider{display:block;width:100%;text-align:left;border-color:transparent;margin-bottom:6px}.provider.selected{background:var(--soft);border-color:var(--line)}.provider small{display:block;color:var(--muted);margin-top:5px}.native{background:var(--soft);border-radius:10px;padding:13px;margin-bottom:22px}.native b{font-size:14px}.native p{font-size:12px}form{display:grid;grid-template-columns:1fr 1fr;gap:15px}label{display:block;font-size:13px;font-weight:550}label span{display:block;margin-bottom:7px}input:not([type=checkbox]),textarea,select{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px;outline:none}input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px #16776320}input:disabled{background:var(--soft);color:var(--muted)}textarea{resize:vertical;min-height:105px;font-family:ui-monospace,Consolas,monospace}.wide{grid-column:1/-1}.checks{display:flex;gap:16px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:5px;font-weight:400}.actions{display:flex;gap:9px;flex-wrap:wrap}.actions .danger{margin-left:auto}.notice{background:var(--soft);border-radius:8px;padding:12px 15px;font-size:13px;line-height:1.6;margin:20px 0;min-height:44px;white-space:pre-wrap}.notice.error{color:var(--danger)}.tabbar{display:flex;gap:10px;border-bottom:1px solid var(--line);margin-bottom:22px}.tabbar button{border:0;border-bottom:2px solid transparent;border-radius:0;padding:10px 2px;margin-right:16px;color:var(--muted)}.tabbar button[aria-selected=true]{border-color:var(--accent);color:var(--fg)}[hidden]{display:none!important}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);word-break:break-word}th{color:var(--muted);font-weight:500}.switch{display:flex;gap:8px;align-items:center;font-size:13px;white-space:nowrap}.foot{border-top:1px solid var(--line);padding-top:16px;margin-top:22px}.keyinfo{font-weight:400;color:var(--muted);font-size:12px;margin-top:7px}.confirm{background:var(--soft);border-radius:8px;padding:12px;margin-bottom:15px}.confirm button{margin:8px 8px 0 0}
+@media(prefers-color-scheme:dark){:root{--bg:#202123;--fg:#eee;--muted:#a4a8af;--line:#3c3f43;--soft:#292c30;--accent:#32a98d;--danger:#ff9b92}}
+body[data-theme=dark]{--bg:#202123;--fg:#eee;--muted:#a4a8af;--line:#3c3f43;--soft:#292c30;--accent:#32a98d;--danger:#ff9b92}
+@media(max-width:680px){main{padding:18px}header{flex-direction:column}.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line);padding:0 0 16px}.native{margin-bottom:12px}#providers{display:flex;overflow:auto;gap:6px}.provider{min-width:130px;width:auto}.actions .danger{margin-left:0}form{gap:12px}.summary{gap:6px}.pill{font-size:11px}}
+@media(max-width:420px){form{grid-template-columns:1fr}h1{font-size:22px}}
+</style>
+<main>
+  <header><div><h1>模型路由</h1><p>在同一个 Codex 中，按会话选择订阅模型或自己的 API。</p></div><label class="switch"><input id="routing" type="checkbox" disabled>启用路由</label></header>
+  <div class="summary"><span class="pill" id="status">正在连接 Codex…</span><span class="pill">订阅登录保持不变</span><span class="pill" id="count">0 个自定义模型</span></div>
+  <div class="tabbar" role="tablist"><button role="tab" aria-selected="true" id="editTab">提供商与模型</button><button role="tab" aria-selected="false" id="logTab">请求记录</button><button id="refresh" style="margin-left:auto">刷新</button></div>
+  <section id="editor" class="layout">
+    <aside><div class="native"><b>● 原生订阅</b><p>继续使用当前账户及原有模型。第三方请求使用各自的密钥。</p></div><div class="section-title">自定义提供商</div><div id="providers"></div><button id="add">＋ 新增提供商</button></aside>
+    <div>
+      <div class="confirm" id="deleteConfirm" hidden><p>删除此提供商及其模型配置？已有会话下一次请求会停止使用它。</p><button id="deleteYes" class="danger">确认删除</button><button id="deleteNo">取消</button></div>
+      <form id="form" autocomplete="off">
+        <label><span>提供商 ID</span><input id="id" pattern="[a-z][a-z0-9_-]{0,39}" required placeholder="my-provider"></label>
+        <label><span>显示名称</span><input id="name" placeholder="我的模型服务" maxlength="100"></label>
+        <label class="wide"><span>Base URL</span><input id="base_url" type="url" required placeholder="https://api.example.com/v1" spellcheck="false"></label>
+        <label class="wide"><span>API Key</span><input id="api_key" type="password" autocomplete="new-password" placeholder="在此输入，保存后不回显" maxlength="16384"><div class="keyinfo" id="keyInfo">保存在本机，使用当前 Windows 账户加密。</div></label>
+        <label><span>接口协议</span><select id="protocol"><option value="responses">Responses</option><option value="chat_completions">Chat Completions</option></select></label>
+        <label style="align-self:end;padding-bottom:10px"><input type="checkbox" id="clear_key"> 清除已保存的密钥</label>
+        <label class="wide"><span>模型 ID · 每行一个</span><textarea id="models" required spellcheck="false" placeholder="model-id | 菜单显示名称"></textarea></label>
+        <label><span>上下文窗口（tokens）</span><input id="context" type="number" min="4096" max="4000000" step="1" required value="128000"></label>
+        <label><span>最大输出（tokens）</span><input id="max_output" type="number" min="256" max="1000000" step="1" required value="8192"></label>
+        <div class="wide checks"><label><input id="enabled" type="checkbox" checked>启用提供商</label><label><input id="vision" type="checkbox">支持图片</label><label><input id="reasoning" type="checkbox">发送 reasoning_effort</label></div>
+        <div class="wide actions"><button class="primary" id="save" type="submit">保存配置</button><button id="probe" type="button">测试首个模型</button><button id="delete" type="button" class="danger" disabled>删除</button></div>
+        <p class="wide">模型需支持工具调用。连接测试会发送一个简短请求，可能产生 API 费用。</p>
+      </form>
+    </div>
+  </section>
+  <section id="logs" hidden><p>仅显示提供商、模型、状态与耗时，不记录对话或密钥。</p><table><thead><tr><th>时间</th><th>提供商 / 模型</th><th>状态</th><th>耗时</th></tr></thead><tbody id="logRows"></tbody></table></section>
+  <div class="notice" role="status" aria-live="polite" id="notice">路由由 Codex 插件加载，无需独立窗口或 Windows 自启动。</div>
+  <p class="foot">新增或删除模型后，等当前任务结束，完整退出并重开客户端以刷新原模型菜单。适用于桌面的本地 Codex / Work 会话。第三方协议能力和长会话压缩能力取决于服务商。</p>
+</main>
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  let serial = 0, state = null, session = null, selected = null, busy = false, formRevision = null;
+  const pending = new Map();
+  const bridge = (method, params) => new Promise((resolve, reject) => {
+    const id = ++serial;
+    const timeout = setTimeout(() => { pending.delete(id); reject(new Error("Codex 连接超时，请重新打开模型路由。")); }, 180000);
+    pending.set(id, {resolve, reject, timeout});
+    parent.postMessage({jsonrpc:"2.0",id,method,params}, "*");
+  });
+  const notify = (text,error=false) => { $("notice").textContent=text; $("notice").classList.toggle("error",error); };
+  function consume(result) {
+    if(result?.isError) throw new Error((result.content||[]).map(c=>c.text||"").join("\n")||"操作失败");
+    const meta=result?._meta;
+    if(meta?.["router/session"]) session=meta["router/session"];
+    if(meta?.["router/state"]) {state=meta["router/state"];render();}
+    return result;
+  }
+  async function call(name,args={}) { return consume(await bridge("tools/call",{name,arguments:{...args}})); }
+  async function action(fn) {
+    if(busy) return;
+    busy=true; document.querySelectorAll("button").forEach(b=>b.disabled=true); $("routing").disabled=true;
+    try { await fn(); } catch(e){notify(e.message||"操作失败",true);}
+    finally {busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false);$("delete").disabled=!selected;$("routing").disabled=!state;if(state)$("routing").checked=state.enabled;}
+  }
+  function render() {
+    $("routing").checked=state.enabled;
+    $("routing").disabled=busy;
+    $("status").textContent=(state.running?"● 路由运行中":"○ 路由未运行")+(state.enabled?" · 已接入":" · 原生直连");
+    $("count").textContent=state.providers.filter(p=>p.enabled!==false).reduce((n,p)=>n+p.models.length,0)+" 个自定义模型";
+    $("providers").replaceChildren();
+    for(const p of state.providers){
+      const b=document.createElement("button"); b.type="button";b.className="provider"+(selected===p.id?" selected":"");
+      const text=document.createElement("span");text.textContent=p.name||p.id;
+      const sub=document.createElement("small");sub.textContent=p.models.length+" 个模型 · "+(p.enabled!==false?"已启用":"已停用");
+      b.append(text,sub);b.onclick=()=>select(p);$("providers").append(b);
+    }
+    $("logRows").replaceChildren();
+    for(const r of state.requests){
+      const tr=document.createElement("tr");
+      for(const text of [r.time,r.route+" / "+r.model,String(r.status),r.duration_ms+" ms"]){
+        const td=document.createElement("td");td.textContent=text;tr.append(td);
+      }
+      $("logRows").append(tr);
+    }
+  }
+  function select(p=null) {
+    selected=p?.id||null;
+    formRevision=state?.revision??null;
+    $("form").reset();$("deleteConfirm").hidden=true;$("id").disabled=!!p;$("delete").disabled=!p;
+    for(const k of ["id","name","base_url"]) $(k).value=p?.[k]||"";
+    $("protocol").value=p?.protocol||"responses";
+    $("models").value=(p?.models||[]).map(m=>m.id+(m.name?" | "+m.name:"")).join("\n");
+    const m=p?.models?.[0]||{};
+    $("context").value=m.context_window||128000;$("max_output").value=m.max_output_tokens||8192;
+    $("enabled").checked=p?.enabled!==false;$("vision").checked=!!m.vision;$("reasoning").checked=!!m.send_reasoning;
+    $("keyInfo").textContent=p?.has_key?"已有加密密钥；留空保留，填写则替换。":"保存在本机，使用当前 Windows 账户加密。";
+    if(state)render();
+  }
+  $("form").onsubmit=e=>{e.preventDefault();action(async()=>{
+    const models=$("models").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(line=>{
+      const at=line.indexOf("|"); const id=(at<0?line:line.slice(0,at)).trim(), name=at<0?id:line.slice(at+1).trim();
+      return {id,name,context_window:Number($("context").value),max_output_tokens:Number($("max_output").value),
+              vision:$("vision").checked,send_reasoning:$("reasoning").checked};
+    });
+    const provider={id:$("id").value.trim(),name:$("name").value.trim(),base_url:$("base_url").value.trim(),
+                    protocol:$("protocol").value,enabled:$("enabled").checked,models};
+    const result=await call("save_provider",{session,revision:formRevision,provider,api_key:$("api_key").value,clear_key:$("clear_key").checked});
+    $("api_key").value="";select(state.providers.find(p=>p.id===provider.id));
+    notify(result.content[0].text);
+  });};
+  $("add").onclick=()=>select();
+  $("refresh").onclick=()=>action(async()=>{await call("read_state");notify("已刷新列表。未保存的编辑仍保留；如有版本冲突，请重新选择提供商后编辑。");});
+  $("delete").onclick=()=>{$("deleteConfirm").hidden=false;};
+  $("deleteNo").onclick=()=>{$("deleteConfirm").hidden=true;};
+  $("deleteYes").onclick=()=>action(async()=>{await call("delete_provider",{session,revision:formRevision,id:selected});select();notify("已删除。重开客户端后更新模型菜单。");});
+  $("probe").onclick=()=>action(async()=>{
+    const p=state?.providers.find(p=>p.id===selected);
+    if(!p)throw new Error("请先保存提供商配置，再测试已保存的模型。");
+    const r=await call("probe_provider",{session,model:"custom/"+p.id+"/"+p.models[0].id});
+    const v=r._meta?.["router/result"];notify("连接测试成功"+(v?.text?"："+v.text:""));
+  });
+  $("routing").onchange=()=>action(async()=>{await call("set_routing",{session,enabled:$("routing").checked});notify("路由已更新。重开客户端后生效。");});
+  function tab(log){$("editor").hidden=log;$("logs").hidden=!log;$("editTab").setAttribute("aria-selected",String(!log));$("logTab").setAttribute("aria-selected",String(log));}
+  $("editTab").onclick=()=>tab(false);$("logTab").onclick=()=>{tab(true);action(()=>call("read_state"));};
+  window.addEventListener("message",e=>{
+    if(e.source!==parent||e.data?.jsonrpc!=="2.0")return;
+    const m=e.data;
+    if(pending.has(m.id)){
+      const p=pending.get(m.id);pending.delete(m.id);clearTimeout(p.timeout);
+      m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);return;
+    }
+    if(m.method==="ui/notifications/tool-result"){try{consume(m.params);}catch(err){notify(err.message,true);}}
+    if(m.method==="ui/notifications/host-context-changed"&&m.params?.theme)document.body.dataset.theme=m.params.theme;
+    if(m.method==="ui/resource-teardown"&&m.id!==undefined)parent.postMessage({jsonrpc:"2.0",id:m.id,result:{}},"*");
+  });
+  action(async()=>{
+    const initialized=await bridge("ui/initialize",{appInfo:{name:"codex-router",version:"1.2.0"},
+      appCapabilities:{availableDisplayModes:["inline","fullscreen"]},protocolVersion:"2026-01-26"});
+    if(initialized.hostContext?.theme)document.body.dataset.theme=initialized.hostContext.theme;
+    parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");
+    await call("read_state");select();
+  });
+})();
+</script>
+</html>

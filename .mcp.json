@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "router": {
+      "command": "cmd.exe",
+      "args": ["/d", "/c", "scripts\\launch.cmd"],
+      "cwd": ".",
+      "env_vars": ["LOCALAPPDATA", "CODEX_HOME", "CODEX_ROUTER_RUNTIME", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "SSL_CERT_FILE"],
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 180
+    }
+  }
+}

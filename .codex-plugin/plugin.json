@@ -1,0 +1,23 @@
+{
+  "name": "codex-router",
+  "version": "1.2.0",
+  "description": "在 Codex 应用内部管理订阅与自定义模型路由。",
+  "author": {"name": "CH3SH-LC", "url": "https://github.com/CH3SH-LC"},
+  "repository": "https://github.com/CH3SH-LC/codex-model-router",
+  "license": "MIT",
+  "mcpServers": "./.mcp.json",
+  "requires_local_executor": true,
+  "interface": {
+    "displayName": "模型路由",
+    "shortDescription": "订阅与自己的 API，在 Codex 内按会话选用",
+    "longDescription": "在原生插件设置、应用侧栏或会话面板内配置 Base URL、API Key、多个模型与协议。插件自动管理路由进程，不需要独立应用或 Windows 自启动。",
+    "developerName": "CH3SH-LC",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": ["打开模型路由设置"],
+    "brandColor": "#167763",
+    "composerIcon": "./assets/router.svg",
+    "logo": "./assets/router.svg",
+    "logoDark": "./assets/router.svg"
+  }
+}
